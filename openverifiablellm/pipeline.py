@@ -67,14 +67,14 @@ def validate_manifest_integrity(manifest: Dict, directory_path: Union[str, Path]
     if manifest_paths != actual_paths:
         return False
     
-    for entry in manifest["files"]:
+    for entry in manifest.get("files", []):
         file_path = dir_path / entry["path"]
         try:
             try:
                 recomputed_hash = compute_normalized_sha256(file_path)
             except (UnicodeDecodeError, ValueError):
                 recomputed_hash = compute_sha256(file_path=file_path)
-        except (FileNotFoundError, PermissionError, OSError, IOError):
+        except (FileNotFoundError, PermissionError, OSError):
             return False
         if entry["sha256"] != recomputed_hash:
             return False

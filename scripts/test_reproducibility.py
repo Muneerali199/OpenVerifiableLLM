@@ -48,7 +48,7 @@ def run_all_tests(runs: int, seed: int) -> Tuple[Dict[str, bool], str]:
     results = {}
     
     print("\n1. Testing reproducibility across multiple runs...")
-    success, hashes, final_hash = _reproducibility_multiple_runs(runs, seed)
+    success, _hashes, final_hash = _reproducibility_multiple_runs(runs, seed)
     results["reproducibility"] = success
     print(f"   {'PASSED' if success else 'FAILED'}: All runs produced {'same' if success else 'different'} hash")
     
@@ -73,15 +73,15 @@ def main():
         if args.output_hash:
             if all(results.values()):
                 print(f"REPRODUCIBLE_HASH={final_hash}")
-                with open("reproducible_hash.txt", "w") as f:
+                with open("reproducible_hash.txt", "w", encoding="utf-8") as f:
                     f.write(final_hash)
         sys.exit(0 if all(results.values()) else 1)
     
     elif args.test == "reproducibility":
-        success, hashes, final_hash = _reproducibility_multiple_runs(args.runs, args.seed)
+        success, _hashes, final_hash = _reproducibility_multiple_runs(args.runs, args.seed)
         if args.output_hash and success:
             print(f"REPRODUCIBLE_HASH={final_hash}")
-            with open("reproducible_hash.txt", "w") as f:
+            with open("reproducible_hash.txt", "w", encoding="utf-8") as f:
                 f.write(final_hash)
         sys.exit(0 if success else 1)
 
