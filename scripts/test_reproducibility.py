@@ -25,7 +25,7 @@ def create_test_dataset(directory: Path, seed: int = 42) -> None:
         file_path.write_text(content, encoding="utf-8")
 
 
-def test_reproducibility_multiple_runs(runs: int = 3, seed: int = 42) -> Tuple[bool, List[str], str]:
+def _reproducibility_multiple_runs(runs: int = 3, seed: int = 42) -> Tuple[bool, List[str], str]:
     if runs <= 0:
         raise ValueError("runs must be a positive integer")
     hashes = []
@@ -48,7 +48,7 @@ def run_all_tests(runs: int, seed: int) -> Tuple[Dict[str, bool], str]:
     results = {}
     
     print("\n1. Testing reproducibility across multiple runs...")
-    success, hashes, final_hash = test_reproducibility_multiple_runs(runs, seed)
+    success, hashes, final_hash = _reproducibility_multiple_runs(runs, seed)
     results["reproducibility"] = success
     print(f"   {'PASSED' if success else 'FAILED'}: All runs produced {'same' if success else 'different'} hash")
     
@@ -78,7 +78,7 @@ def main():
         sys.exit(0 if all(results.values()) else 1)
     
     elif args.test == "reproducibility":
-        success, hashes, final_hash = test_reproducibility_multiple_runs(args.runs, args.seed)
+        success, hashes, final_hash = _reproducibility_multiple_runs(args.runs, args.seed)
         if args.output_hash and success:
             print(f"REPRODUCIBLE_HASH={final_hash}")
             with open("reproducible_hash.txt", "w") as f:

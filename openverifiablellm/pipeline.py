@@ -1,7 +1,8 @@
+import copy
 import json
 import hashlib
 from pathlib import Path
-from typing import Union, Dict
+from typing import Union, Dict, List
 from .utils import compute_sha256
 
 
@@ -41,7 +42,10 @@ def generate_manifest(directory_path: Union[str, Path]) -> Dict:
 
 
 def get_manifest_hash(manifest: Dict) -> str:
-    manifest_json = json.dumps(manifest, sort_keys=True, separators=(",", ":"))
+    cleaned_manifest = copy.deepcopy(manifest)
+    for entry in cleaned_manifest.get("files", []):
+        entry.pop("size", None)
+    manifest_json = json.dumps(cleaned_manifest, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(manifest_json.encode("utf-8")).hexdigest()
 
 
