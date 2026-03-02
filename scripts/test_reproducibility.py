@@ -26,6 +26,8 @@ def create_test_dataset(directory: Path, seed: int = 42) -> None:
 
 
 def test_reproducibility_multiple_runs(runs: int = 3, seed: int = 42) -> Tuple[bool, List[str], str]:
+    if runs <= 0:
+        raise ValueError("runs must be a positive integer")
     hashes = []
     for i in range(runs):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -39,7 +41,7 @@ def test_reproducibility_multiple_runs(runs: int = 3, seed: int = 42) -> Tuple[b
     return all_match, hashes, hashes[0] if hashes else ""
 
 
-def run_all_tests(runs: int, seed: int) -> Dict[str, bool]:
+def run_all_tests(runs: int, seed: int) -> Tuple[Dict[str, bool], str]:
     print("=" * 60)
     print("Running Reproducibility Tests")
     print("=" * 60)
@@ -55,7 +57,7 @@ def run_all_tests(runs: int, seed: int) -> Dict[str, bool]:
         print("ALL TESTS PASSED")
     else:
         print("SOME TESTS FAILED")
-    return results
+    return results, final_hash
 
 
 def main():
@@ -67,10 +69,9 @@ def main():
     args = parser.parse_args()
     
     if args.test == "all":
-        results = run_all_tests(args.runs, args.seed)
+        results, final_hash = run_all_tests(args.runs, args.seed)
         if args.output_hash:
-            success, hashes, final_hash = test_reproducibility_multiple_runs(args.runs, args.seed)
-            if success:
+            if all(results.values()):
                 print(f"REPRODUCIBLE_HASH={final_hash}")
                 with open("reproducible_hash.txt", "w") as f:
                     f.write(final_hash)

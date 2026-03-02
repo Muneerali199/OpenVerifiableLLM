@@ -29,7 +29,7 @@ def generate_manifest(directory_path: Union[str, Path]) -> Dict:
         try:
             file_hash = compute_normalized_sha256(file)
         except (UnicodeDecodeError, ValueError):
-            file_hash = compute_sha256(file)
+            file_hash = compute_sha256(file_path=file)
         
         manifest_entries.append({
             "path": rel_path,
@@ -69,7 +69,7 @@ def validate_manifest_integrity(manifest: Dict, directory_path: Union[str, Path]
             try:
                 recomputed_hash = compute_normalized_sha256(file_path)
             except (UnicodeDecodeError, ValueError):
-                recomputed_hash = compute_sha256(file_path)
+                recomputed_hash = compute_sha256(file_path=file_path)
         except (FileNotFoundError, PermissionError, OSError, IOError):
             return False
         if entry["sha256"] != recomputed_hash:

@@ -222,7 +222,7 @@ def test_binary_files_in_manifest(tmp_path):
     assert len(manifest["files"]) == 2
     
     binary_path = dataset_dir / "binary.bin"
-    binary_hash = compute_sha256(binary_path)
+    binary_hash = compute_sha256(file_path=binary_path)
     
     for entry in manifest["files"]:
         if entry["path"] == "binary.bin":
