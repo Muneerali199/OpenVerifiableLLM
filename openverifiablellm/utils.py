@@ -224,6 +224,7 @@ def extract_text_from_xml(
     open_func = bz2.open if is_bz2 else open
 
     if stream:
+
         def _generator() -> Generator[str, None, None]:
             with open_func(input_path, "rb") as f:
                 context = ET.iterparse(f, events=("end",))
@@ -405,6 +406,7 @@ def compute_sha256(
     path = Path(file_path)  # type: ignore[arg-type]
 
     if stream:
+
         def _stream_gen() -> Generator[Tuple[bytes, str], None, None]:
             _sha256 = hashlib.sha256()
             with path.open("rb") as f:

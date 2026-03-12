@@ -19,7 +19,6 @@ Run with:
 """
 
 import hashlib
-import io
 import textwrap
 from pathlib import Path
 from typing import List, Optional
@@ -29,10 +28,10 @@ import pytest
 from openverifiablellm.incremental_merkle import IncrementalMerkleTree
 from openverifiablellm.utils import extract_text_from_xml
 
-
 # ===========================================================================
 # Reference implementation: a classic batch Merkle tree
 # ===========================================================================
+
 
 def _sha256_bytes(data: bytes) -> bytes:
     """Return raw 32-byte SHA-256 digest."""
@@ -71,9 +70,7 @@ def batch_merkle_root(texts: List[str]) -> Optional[str]:
         return None
 
     # Leaf level: hash each string
-    level: List[bytes] = [
-        _sha256_bytes(t.encode("utf-8")) for t in texts
-    ]
+    level: List[bytes] = [_sha256_bytes(t.encode("utf-8")) for t in texts]
 
     # Reduce level-by-level until only the root remains
     while len(level) > 1:
@@ -92,6 +89,7 @@ def batch_merkle_root(texts: List[str]) -> Optional[str]:
 # Fixtures
 # ===========================================================================
 
+
 @pytest.fixture
 def hundred_strings() -> List[str]:
     """
@@ -107,15 +105,14 @@ def hundred_strings() -> List[str]:
 # Core correctness test (the PRIMARY deliverable)
 # ===========================================================================
 
+
 class TestIncrementalVsBatch:
     """
     Verify that IncrementalMerkleTree produces the same root as the
     batch reference implementation for the same input sequence.
     """
 
-    def test_root_hash_matches_batch_100_strings(
-        self, hundred_strings: List[str]
-    ) -> None:
+    def test_root_hash_matches_batch_100_strings(self, hundred_strings: List[str]) -> None:
         """
         PRIMARY TEST: IncrementalMerkleTree root must exactly equal the
         batch Merkle root for the same 100 strings.
@@ -124,7 +121,9 @@ class TestIncrementalVsBatch:
         """
         # Build batch reference root
         expected_root = batch_merkle_root(hundred_strings)
-        assert expected_root is not None, "batch_merkle_root should not return None for non-empty input"
+        assert expected_root is not None, (
+            "batch_merkle_root should not return None for non-empty input"
+        )
 
         # Build incremental root
         tree = IncrementalMerkleTree()
@@ -192,7 +191,9 @@ class TestIncrementalVsBatch:
 
         assert tree.get_root_hash() == expected
 
-    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 6, 7, 8, 15, 16, 17, 31, 32, 33, 64, 100, 128, 255, 256])
+    @pytest.mark.parametrize(
+        "n", [1, 2, 3, 4, 5, 6, 7, 8, 15, 16, 17, 31, 32, 33, 64, 100, 128, 255, 256]
+    )
     def test_root_hash_matches_batch_parametric(self, n: int) -> None:
         """
         Parametric sweep over various leaf counts including edge cases,
@@ -205,14 +206,13 @@ class TestIncrementalVsBatch:
         for t in texts:
             tree.append_leaf(t)
 
-        assert tree.get_root_hash() == expected, (
-            f"Root hash mismatch for n={n}"
-        )
+        assert tree.get_root_hash() == expected, f"Root hash mismatch for n={n}"
 
 
 # ===========================================================================
 # Empty-tree behaviour
 # ===========================================================================
+
 
 class TestEmptyTree:
     def test_get_root_hash_returns_none_when_empty(self) -> None:
@@ -233,6 +233,7 @@ class TestEmptyTree:
 # Leaf count tracking
 # ===========================================================================
 
+
 class TestLeafCount:
     def test_leaf_count_increments(self) -> None:
         tree = IncrementalMerkleTree()
@@ -250,6 +251,7 @@ class TestLeafCount:
 # ===========================================================================
 # Frontier size invariant
 # ===========================================================================
+
 
 class TestFrontierInvariant:
     """
@@ -273,6 +275,7 @@ class TestFrontierInvariant:
 # ===========================================================================
 # Determinism / reproducibility
 # ===========================================================================
+
 
 class TestDeterminism:
     def test_same_input_same_root(self, hundred_strings: List[str]) -> None:
@@ -328,6 +331,7 @@ class TestDeterminism:
 # Hash format sanity checks
 # ===========================================================================
 
+
 class TestHashFormat:
     def test_root_hash_is_64_char_hex(self) -> None:
         """SHA-256 produces 32 bytes → 64 lowercase hex characters."""
@@ -357,6 +361,7 @@ class TestHashFormat:
 # ===========================================================================
 # repr() smoke test
 # ===========================================================================
+
 
 class TestRepr:
     def test_repr_contains_leaf_count(self) -> None:

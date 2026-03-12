@@ -36,9 +36,10 @@ import logging
 import sys
 import time
 import tracemalloc
-import defusedxml.ElementTree as ET
 from pathlib import Path
 from typing import List, Optional, Tuple
+
+import defusedxml.ElementTree as ET
 
 from openverifiablellm.incremental_merkle import IncrementalMerkleTree
 from openverifiablellm.utils import clean_wikitext, extract_text_from_xml
@@ -50,11 +51,11 @@ logger = logging.getLogger(__name__)
 # Type alias for a benchmark result row
 # ---------------------------------------------------------------------------
 BenchmarkResult = Tuple[
-    str,           # approach label
-    float,         # wall-clock seconds
-    float,         # peak RAM in MB
-    Optional[str], # root hash (hex), or None when no articles were found
-    int,           # article count
+    str,  # approach label
+    float,  # wall-clock seconds
+    float,  # peak RAM in MB
+    Optional[str],  # root hash (hex), or None when no articles were found
+    int,  # article count
 ]
 
 
@@ -68,6 +69,7 @@ def _bytes_to_mb(n_bytes: int) -> float:
 # ===========================================================================
 # APPROACH 1 — "Old Way" (in-memory)
 # ===========================================================================
+
 
 def _run_old_way(file_path: Path) -> BenchmarkResult:
     """
@@ -102,9 +104,7 @@ def _run_old_way(file_path: Path) -> BenchmarkResult:
     article_count = len(all_texts)
 
     # Hash each article text to a leaf
-    leaves: List[bytes] = [
-        hashlib.sha256(t.encode("utf-8")).digest() for t in all_texts
-    ]
+    leaves: List[bytes] = [hashlib.sha256(t.encode("utf-8")).digest() for t in all_texts]
 
     # Batch construction: classic bottom-up Merkle tree
     if not leaves:
@@ -138,6 +138,7 @@ def _run_old_way(file_path: Path) -> BenchmarkResult:
 # ===========================================================================
 # APPROACH 2 — "New Way" (streaming)
 # ===========================================================================
+
 
 def _run_new_way(file_path: Path) -> BenchmarkResult:
     """
@@ -181,6 +182,7 @@ def _run_new_way(file_path: Path) -> BenchmarkResult:
 # Reporting: GitHub-Flavored Markdown table
 # ===========================================================================
 
+
 def _render_markdown_table(
     old: BenchmarkResult,
     new: BenchmarkResult,
@@ -198,13 +200,19 @@ def _render_markdown_table(
 
     # Guard against division by zero on extremely fast runs
     time_ratio = (time_old / time_new) if time_new > 0 else float("inf")
-    ram_ratio  = (ram_old  / ram_new)  if ram_new  > 0 else float("inf")
+    ram_ratio = (ram_old / ram_new) if ram_new > 0 else float("inf")
 
     hash_old_str = hash_old if hash_old is not None else "N/A (0 articles)"
     hash_new_str = hash_new if hash_new is not None else "N/A (0 articles)"
     hashes_match = (hash_old == hash_new) and hash_old is not None
-    hash_verdict = "YES — identical root hash" if hashes_match else (
-        "NO  — MISMATCH (investigate!)" if hash_old is not None else "N/A — no articles processed"
+    hash_verdict = (
+        "YES — identical root hash"
+        if hashes_match
+        else (
+            "NO  — MISMATCH (investigate!)"
+            if hash_old is not None
+            else "N/A — no articles processed"
+        )
     )
 
     lines = [
@@ -244,7 +252,7 @@ def _render_terminal_table(
     label_old, time_old, ram_old, hash_old, count_old = old
     label_new, time_new, ram_new, hash_new, count_new = new
     time_ratio = (time_old / time_new) if time_new > 0 else float("inf")
-    ram_ratio  = (ram_old  / ram_new)  if ram_new  > 0 else float("inf")
+    ram_ratio = (ram_old / ram_new) if ram_new > 0 else float("inf")
     hashes_match = (hash_old == hash_new) and hash_old is not None
 
     w = 90
@@ -259,7 +267,12 @@ def _render_terminal_table(
         f"├{sep}┤",
         row("Metric", "Old Way", "New Way", "Improvement"),
         f"├{sep}┤",
-        row("Wall-clock time (s)", f"{time_old:.3f} s", f"{time_new:.3f} s", f"{time_ratio:,.1f}x faster"),
+        row(
+            "Wall-clock time (s)",
+            f"{time_old:.3f} s",
+            f"{time_new:.3f} s",
+            f"{time_ratio:,.1f}x faster",
+        ),
         row("Peak RAM (MB)", f"{ram_old:.2f} MB", f"{ram_new:.2f} MB", f"{ram_ratio:,.1f}x less"),
         row("Articles processed", str(count_old), str(count_new), ""),
         row("Root hashes match", "", "", "YES" if hashes_match else "NO — MISMATCH"),
@@ -272,6 +285,7 @@ def _render_terminal_table(
 # Subprocess entry point (called by each isolated trial)
 # ===========================================================================
 
+
 def _run_benchmark_mode(mode: str, file_path: str) -> None:
     """
     Single-mode entry point invoked inside an isolated subprocess per trial.
@@ -280,6 +294,7 @@ def _run_benchmark_mode(mode: str, file_path: str) -> None:
     The parent process parses these lines to aggregate trial results.
     """
     import json
+
     path = Path(file_path)
     if mode == "old":
         result = _run_old_way(path)
@@ -289,18 +304,23 @@ def _run_benchmark_mode(mode: str, file_path: str) -> None:
         raise ValueError(f"Unknown mode: {mode!r}")
 
     label, elapsed, ram, root, articles = result
-    print(json.dumps({
-        "label": label,
-        "time": elapsed,
-        "ram": ram,
-        "root": root,
-        "articles": articles,
-    }))
+    print(
+        json.dumps(
+            {
+                "label": label,
+                "time": elapsed,
+                "ram": ram,
+                "root": root,
+                "articles": articles,
+            }
+        )
+    )
 
 
 # ===========================================================================
 # Main entry point
 # ===========================================================================
+
 
 def run_benchmark(file_path: str, trials: int = 3) -> None:
     """
@@ -329,13 +349,13 @@ def run_benchmark(file_path: str, trials: int = 3) -> None:
         sys.exit(1)
 
     old_times: List[float] = []
-    old_rams:  List[float] = []
+    old_rams: List[float] = []
     new_times: List[float] = []
-    new_rams:  List[float] = []
+    new_rams: List[float] = []
     old_root: Optional[str] = None
     new_root: Optional[str] = None
     old_articles = 0
-    new_articles  = 0
+    new_articles = 0
 
     print(f"\nRunning {trials}-trial benchmark on: {path.name}")
     print("  Each trial runs in an isolated subprocess to avoid pagecache bias.\n")
@@ -350,8 +370,12 @@ def run_benchmark(file_path: str, trials: int = 3) -> None:
 
             proc = subprocess.run(
                 [
-                    sys.executable, "-m", "openverifiablellm.benchmark",
-                    "--_mode", mode, file_path,
+                    sys.executable,
+                    "-m",
+                    "openverifiablellm.benchmark",
+                    "--_mode",
+                    mode,
+                    file_path,
                 ],
                 capture_output=True,
                 text=True,
@@ -387,14 +411,14 @@ def run_benchmark(file_path: str, trials: int = 3) -> None:
     old_result: BenchmarkResult = (
         "Old Way (in-memory)",
         round(statistics.median(old_times), 3),
-        round(statistics.median(old_rams),  2),
+        round(statistics.median(old_rams), 2),
         old_root,
         old_articles,
     )
     new_result: BenchmarkResult = (
         "New Way (streaming)",
         round(statistics.median(new_times), 3),
-        round(statistics.median(new_rams),  2),
+        round(statistics.median(new_rams), 2),
         new_root,
         new_articles,
     )
