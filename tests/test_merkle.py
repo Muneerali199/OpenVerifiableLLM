@@ -174,8 +174,8 @@ class TestIncrementalVsBatch:
         for t in texts:
             tree.append_leaf(t)
 
-        # For exactly 2^k leaves, the frontier should have exactly 1 node
-        assert len(tree._frontier) == 1, (
+        # For exactly 2^k leaves the frontier collapses to a single node
+        assert tree.frontier_size == 1, (
             "For a power-of-two leaf count the frontier should collapse to 1 node"
         )
         assert tree.get_root_hash() == expected
@@ -226,7 +226,7 @@ class TestEmptyTree:
 
     def test_frontier_empty_when_empty(self) -> None:
         tree = IncrementalMerkleTree()
-        assert tree._frontier == {}
+        assert tree.frontier_size == 0
 
 
 # ===========================================================================
@@ -266,9 +266,9 @@ class TestFrontierInvariant:
             tree.append_leaf(f"x_{i}")
 
         expected_frontier_nodes = bin(n).count("1")
-        assert len(tree._frontier) == expected_frontier_nodes, (
+        assert tree.frontier_size == expected_frontier_nodes, (
             f"After {n} leaves (binary: {bin(n)}), frontier should have "
-            f"{expected_frontier_nodes} node(s), got {len(tree._frontier)}"
+            f"{expected_frontier_nodes} node(s), got {tree.frontier_size}"
         )
 
 

@@ -70,10 +70,10 @@ Usage
 import hashlib
 from typing import Dict, Optional
 
-
 # ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
+
 
 def _sha256_bytes(data: bytes) -> bytes:
     """Return the raw 32-byte SHA-256 digest of *data*."""
@@ -103,6 +103,7 @@ def _combine(left: bytes, right: bytes) -> bytes:
 # ---------------------------------------------------------------------------
 # IncrementalMerkleTree
 # ---------------------------------------------------------------------------
+
 
 class IncrementalMerkleTree:
     """
@@ -261,6 +262,16 @@ class IncrementalMerkleTree:
     # ------------------------------------------------------------------
     # Convenience / introspection
     # ------------------------------------------------------------------
+
+    @property
+    def frontier_size(self) -> int:
+        """Number of nodes currently stored in the frontier.
+
+        Equals ``bin(leaf_count).count('1')`` — one node per set bit in the
+        binary representation of the leaf count.  This is the canonical public
+        way to observe frontier occupancy without accessing ``_frontier`` directly.
+        """
+        return len(self._frontier)
 
     @property
     def leaf_count(self) -> int:

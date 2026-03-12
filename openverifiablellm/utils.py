@@ -228,18 +228,26 @@ def extract_text_from_xml(
         def _generator() -> Generator[str, None, None]:
             with open_func(input_path, "rb") as f:
                 context = ET.iterparse(f, events=("end",))
-                for _, elem in context:
-                    if elem.tag.endswith("page"):
-                        text_elem = elem.find(".//{*}text")
-                        raw_text: str = ""
-                        if text_elem is not None and text_elem.text:
-                            raw_text = text_elem.text
-                        elem.clear()
-                        if not raw_text:
-                            continue
-                        cleaned = clean_wikitext(raw_text)
-                        if cleaned:
-                            yield cleaned
+                try:
+                    for _, elem in context:
+                        if elem.tag.endswith("page"):
+                            text_elem = elem.find(".//{*}text")
+                            raw_text: str = ""
+                            if text_elem is not None and text_elem.text:
+                                raw_text = text_elem.text
+                            elem.clear()
+                            if not raw_text:
+                                continue
+                            cleaned = clean_wikitext(raw_text)
+                            if cleaned:
+                                yield cleaned
+                finally:
+                    # Release iterparse internal state even if the caller
+                    # abandons the generator mid-stream or an exception occurs.
+                    try:
+                        context.close()
+                    except AttributeError:
+                        pass
             logger.info("Finished streaming articles from '%s'.", input_path.name)
 
         return _generator()

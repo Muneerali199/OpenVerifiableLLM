@@ -86,7 +86,13 @@ def _run_old_way(file_path: Path) -> BenchmarkResult:
     # ----- Step 1: load all texts into memory -----
     all_texts: List[str] = []
 
-    with bz2.open(file_path, "rb") as raw:
+    # Detect compression by inspecting the bz2 magic bytes (same logic as
+    # extract_text_from_xml) so plain .xml files are also handled correctly.
+    with open(file_path, "rb") as _probe:
+        _is_bz2 = _probe.read(3) == b"BZh"
+    _open_func = bz2.open if _is_bz2 else open
+
+    with _open_func(file_path, "rb") as raw:
         context = ET.iterparse(raw, events=("end",))
         for _event, elem in context:
             if elem.tag.endswith("page"):
@@ -384,7 +390,26 @@ def run_benchmark(file_path: str, trials: int = 3) -> None:
                 print(f"\n[ERROR] Subprocess failed (mode={mode}):\n{proc.stderr}", file=sys.stderr)
                 sys.exit(1)
 
-            data = json.loads(proc.stdout.strip())
+            # Extract the last non-empty line that parses as valid JSON.
+            # This tolerates any stray log/warning lines on stdout that may
+            # appear before or after the single JSON payload line.
+            _stdout_lines = proc.stdout.splitlines()
+            data = None
+            for _line in reversed(_stdout_lines):
+                _line = _line.strip()
+                if _line:
+                    try:
+                        data = json.loads(_line)
+                        break
+                    except json.JSONDecodeError:
+                        continue
+            if data is None:
+                print(
+                    f"\n[ERROR] Could not find valid JSON in subprocess output "
+                    f"(mode={mode}):\n{proc.stdout}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             print(f"time={data['time']:.3f}s  ram={data['ram']:.2f}MB")
 
             if mode == "old":
